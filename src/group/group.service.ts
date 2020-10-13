@@ -144,7 +144,10 @@ export class GroupService {
     try {
       let condition: any = {
         isActive: true,
-        name: { $regex: keyword, $options: 'siu' }
+        $or: [
+          { name: { $regex: keyword, $options: 'siu' } },
+          { _id: keyword }
+        ]
       }
       const groups = await getMongoRepository(GroupsEntity)
         .aggregate([
