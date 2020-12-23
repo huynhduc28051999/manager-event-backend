@@ -3,7 +3,7 @@ import * as uuid from 'uuid'
 import { ByUser } from '@utils'
 import * as moment from 'moment'
 
-@Entity('permissions')
+@Entity('Permission')
 export class Permission {
   @ObjectIdColumn()
   _id: string

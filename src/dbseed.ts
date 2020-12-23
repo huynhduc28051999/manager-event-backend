@@ -43,7 +43,7 @@ async function main() {
 			}
 		]
 		users.map(async item => {
-			await db.collection('users').findOneAndUpdate(
+			await db.collection('User').findOneAndUpdate(
 				{ _id: item._id },
 				{
 					$setOnInsert: {
@@ -85,7 +85,7 @@ async function main() {
 		]
 
 		permissions.map(async item => {
-			await db.collection('permissions').findOneAndUpdate(
+			await db.collection('Permission').findOneAndUpdate(
 				{ _id: item._id },
 				{
 					$setOnInsert: {
@@ -115,7 +115,7 @@ async function main() {
 			}
 		]
 		groups.map(async item => {
-			await db.collection('groups').findOneAndUpdate(
+			await db.collection('Group').findOneAndUpdate(
 				{ _id: item._id },
 				{
 					$setOnInsert: {
@@ -134,15 +134,16 @@ async function main() {
 				{ upsert: true }
 			)
 		})
+		
+		// users: [{
+		// 	idUser: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
+		// 	state: 'APPROVED'
+		// }],
 		const events = [
 			{
 				_id: '1',
 				name: 'test event',
 				idGroup: '1',
-				users: [{
-					idUser: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
-					state: 'APPROVED'
-				}],
 				description: 'noi dung test event',
 				state: 'PROCESSING',
 				createdBy: {
@@ -152,7 +153,7 @@ async function main() {
 			}
 		]
 		events.map(async item => {
-			await db.collection('events').findOneAndUpdate(
+			await db.collection('Event').findOneAndUpdate(
 				{ _id: item._id },
 				{
 					$setOnInsert: {
@@ -162,10 +163,38 @@ async function main() {
 						name: item.name,
 						description: item.description,
 						idGroup: item.idGroup,
-						users: item.users,
 						isActive: true,
 						isLocked: false,
 						state: item.state,
+						createdAt: moment().valueOf(),
+						createdBy: item.createdBy,
+						updatedAt: moment().valueOf()
+					}
+				},
+				{ upsert: true }
+			)
+		})
+		const userEvent = [
+			{
+				_id: '1',
+				idEvent: '1',
+				idUser: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
+				state: 'APPROVED',
+				createdBy: {
+					_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
+					name: 'admin'
+				}
+			}
+		]
+		userEvent.map(async item => {
+			await db.collection('UserEvent').findOneAndUpdate(
+				{ _id: item._id },
+				{
+					$setOnInsert: {
+						_id: item._id
+					},
+					$set: {
+						...item,
 						createdAt: moment().valueOf(),
 						createdBy: item.createdBy,
 						updatedAt: moment().valueOf()
