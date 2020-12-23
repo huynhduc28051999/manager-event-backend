@@ -1,11 +1,15 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 import { getMongoRepository } from 'typeorm'
-import { EventEntity, UserEntity, GroupsEntity, FeedbackEntity, UserEventEntity } from '@entity'
+import { EventEntity, UserEntity, GroupsEntity, FeedbackEntity, UserEventEntity, EventHistoryEntity } from '@entity'
 import * as moment from 'moment'
 import { AddEventDTO, EnumEventState, EnumUserEventState, EnumUserEventVote, UpdateEventDTO } from '@utils'
+import { AppGateway } from 'shared/app.gateway'
 
 @Injectable()
 export class EventService {
+  constructor (
+    private readonly appGateway: AppGateway
+  ) {}
   async getAllEvent() {
     try {
       const events = await getMongoRepository(EventEntity).find({
@@ -161,6 +165,16 @@ export class EventService {
         name
       }
       const saveEvent = await getMongoRepository(EventEntity).save(event)
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã ${event.isLocked ? 'Mở Khóa' : 'Khóa'} sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
+      // this.appGateway.sendAlet
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -194,6 +208,15 @@ export class EventService {
         state: EnumUserEventState.APPROVED
       }))
       await getMongoRepository(UserEventEntity).insertMany(arrNewUserEvent)
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã tạo sự kiện ${newEvent.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id,
+          name
+        }
+      }))
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -223,6 +246,15 @@ export class EventService {
           }
         }
       )
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã thay đổi thông tin sự kiện ${updatedEvent.value.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
       return updatedEvent.value
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -243,6 +275,17 @@ export class EventService {
           }
         }
       )
+      for (const id of ids) {
+        await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+          idEvent: id,
+          content: `${name} đã xóa sự kiện này`,
+          time: moment().valueOf(),
+          createdBy: {
+            _id,
+            name
+          }
+        }))
+      }
       return !!deleted.result.ok
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -264,6 +307,15 @@ export class EventService {
         name
       }
       const saveEvent = await getMongoRepository(EventEntity).save(event)
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã thay đổi trạng thái sự kiện thành Đã hoàn thành`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -285,6 +337,16 @@ export class EventService {
         name
       }
       const saveEvent = await getMongoRepository(EventEntity).save(event)
+      
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã hủy sự kiện này`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -334,6 +396,16 @@ export class EventService {
           name
         }
       }))
+      const user = await getMongoRepository(UserEntity).findOne({ _id: idUser })
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã thêm ${user.name} vào sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUserUpdate,
+          name
+        }
+      }))
       return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -359,6 +431,16 @@ export class EventService {
         name
       }
       const saveUserEvent = await getMongoRepository(UserEventEntity).save(userEventExist)
+      const user = await getMongoRepository(UserEntity).findOne({ _id: idUser })
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã xóa ${user.name} khỏi sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUserUpdate,
+          name
+        }
+      }))
       return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -393,6 +475,16 @@ export class EventService {
         name
       }
       const saveUserEvent = await getMongoRepository(UserEventEntity).save(userEventRequested)
+      const user = await getMongoRepository(UserEntity).findOne({ _id: idUser })
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent,
+        content: `${name} đã chấp nhận ${user.name} tham gia sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUserUpdate,
+          name
+        }
+      }))
       return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)

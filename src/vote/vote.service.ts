@@ -1,9 +1,19 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 import { EnumUserEventVote, EnumUserEventState } from '@utils'
 import { getMongoRepository } from 'typeorm'
-import { UserEventEntity, EventEntity, UserEntity } from '@entity'
+import { UserEventEntity, EventEntity, UserEntity, UserHistoryEntity } from '@entity'
 import * as moment from 'moment'
 
+const displayTypevote = (value) => {
+  switch (value) {
+    case 'LIKE':
+      return 'Thích'
+    case 'DISLIKE':
+      return 'Không thích'
+    default:
+      return 'Bỏ thích'
+  }
+}
 @Injectable()
 export class VoteService {
   async modifyVote(idUser: string, idEvent: string, type: EnumUserEventVote) {
@@ -19,6 +29,15 @@ export class VoteService {
         throw new HttpException(`You was not joined ${event.name}`, HttpStatus.NOT_FOUND)
       userEventExist.typeVote = type
       const saveVote = await getMongoRepository(UserEventEntity).save(userEventExist)
+      await getMongoRepository(UserHistoryEntity).insertOne(new UserHistoryEntity({
+        idUser,
+        content: `${name} đã ${displayTypevote(type)} sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
       return !!saveVote
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)

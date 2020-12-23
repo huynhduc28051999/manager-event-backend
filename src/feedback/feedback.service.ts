@@ -1,7 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 import { getMongoRepository } from 'typeorm'
-import { EventEntity, FeedbackEntity, UserEntity, UserEventEntity } from '@entity'
+import { EventEntity, FeedbackEntity, UserEntity, UserEventEntity, UserHistoryEntity } from '@entity'
 import { FeedbackDTO, EnumUserEventState } from '@utils'
+import * as moment from 'moment'
 
 @Injectable()
 export class FeedbackService {
@@ -57,7 +58,7 @@ export class FeedbackService {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
-  async addFeedback(input: FeedbackDTO, { _id }) {
+  async addFeedback(input: FeedbackDTO, { _id, name }) {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id: input.idEvent, isActive: true })
       if (!event) throw new HttpException('Event not found or has deleted', HttpStatus.NOT_FOUND)
@@ -74,6 +75,15 @@ export class FeedbackService {
           idUser: _id
         })
       )
+      await getMongoRepository(UserHistoryEntity).insertOne(new UserHistoryEntity({
+        idUser: _id,
+        content: `${name} đã bình luận ở sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id,
+          name
+        }
+      }))
       return !!inseted.result.ok
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)

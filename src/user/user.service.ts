@@ -4,7 +4,7 @@ import * as moment from 'moment'
 import { getMongoRepository } from "typeorm"
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common"
 import { ACCESS_TOKEN, AddUserDTO, LoginDTO, ByUser, ChangePasswordDTO } from '@utils'
-import { Permission, UserEntity, GroupsEntity, EventEntity, UserEventEntity } from '@entity'
+import { Permission, UserEntity, GroupsEntity, EventEntity, UserEventEntity, UserHistoryEntity } from '@entity'
 
 @Injectable()
 export class UserService {
@@ -202,6 +202,15 @@ export class UserService {
         name
       }
       const saveUSer = await getMongoRepository(UserEntity).save(userExist)
+      await getMongoRepository(UserHistoryEntity).insertOne(new UserHistoryEntity({
+        idUser: _id,
+        content: `${name} đã ${userExist.isLocked ? 'mở khóa' : 'Khóa'} thành viên này`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
       return !!saveUSer
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -283,6 +292,15 @@ export class UserService {
         } 
       })
       const saveUserEvent = await getMongoRepository(UserEventEntity).save(newUserEvent)
+      await getMongoRepository(UserHistoryEntity).insertOne(new UserHistoryEntity({
+        idUser: _id,
+        content: `${name} đã yêu cầu tham gia sự kiện ${event.name}`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
       return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
