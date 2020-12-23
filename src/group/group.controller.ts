@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Body, Query, Post } from '@nestjs/common'
+import { Controller, Get, UseGuards, Body, Query, Post, Delete, Put } from '@nestjs/common'
 import { GroupService } from './group.service'
 import { Reponse, User, AuthGuard, Roles } from '@common'
 import { ADMIN, MANAGER, USER, GroupDTO } from '@utils'
@@ -20,40 +20,40 @@ export class GroupController {
   }
 
   @Roles(ADMIN)
-  @Get('group')
+  @Get()
   async groupById(@Query('id') id) {
     const data = await this.groupService.groupsById(id)
     return Reponse(data)
   }
 
   @Roles(ADMIN)
-  @Post('add-group')
+  @Post()
   async addGroup(@User() user, @Body() input: GroupDTO) {
     const data = await this.groupService.addGroups(input, user)
     return Reponse(data)
   }
 
   @Roles(ADMIN)
-  @Post('update-group')
+  @Put()
   async updateGroup(@User() user, @Body() { _id, input }) {
     const data = await this.groupService.updateGroup(_id, input, user)
-    this.appGateway.sendAlet(
-      `${user.mame || ''} đã chỉnh sửa group bạn tham gia`,
-      [_id],
-      user._id
-    )
+    // this.appGateway.sendAlet(
+    //   `${user.mame || ''} đã chỉnh sửa group bạn tham gia`,
+    //   [_id],
+    //   user._id
+    // )
     return Reponse(data)
   }
 
   @Roles(ADMIN)
-  @Post('delete-group')
+  @Delete()
   async deleteGroups(@User() user, @Body() { ids }) {
     const data = await this.groupService.deleteGroups(ids, user)
-    this.appGateway.sendAlet(
-      `${user.mame || ''} đã xóa group bạn tham gia`,
-      ids,
-      user._id
-    )
+    // this.appGateway.sendAlet(
+    //   `${user.mame || ''} đã xóa group bạn tham gia`,
+    //   ids,
+    //   user._id
+    // )
     return Reponse(data)
   }
 

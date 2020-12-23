@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, UseGuards, Query, Req } from '@nestjs/common'
+import { Controller, Get, Param, Post, Body, UseGuards, Query, Req, Delete, Put } from '@nestjs/common'
 import { UserService } from './user.service'
 import { AddUserDTO, ADMIN, MANAGER, USER, ChangePasswordDTO, ChangeProfile } from '@utils'
 import { AuthGuard, Roles, User, Reponse } from '@common'
@@ -21,7 +21,7 @@ export class UserController {
   }
 
   @Roles(ADMIN)
-  @Post('add-user')
+  @Post()
   async addUser(@User() user, @Body() addUserDTO: AddUserDTO) {
     const data = await this.userService.addUser(addUserDTO, user)
     return Reponse(data)
@@ -35,14 +35,14 @@ export class UserController {
   }
 
   @Roles(ADMIN)
-  @Get('user-by-id')
+  @Get()
   async userById(@Query('id') idUser) {
     const data = await this.userService.getUserById(idUser)
     return Reponse(data)
   }
 
   @Roles(ADMIN)
-  @Post('delete-user')
+  @Delete()
   async deleteUsers(@User() user, @Body() { ids }) {
     // {
     //   ids: []
@@ -52,7 +52,7 @@ export class UserController {
   }
 
   @Roles(ADMIN)
-  @Post('update-user')
+  @Put()
   async update(@User() user, @Body() { _id, input }) {
     // {
     //   _id: string,
@@ -81,11 +81,11 @@ export class UserController {
 
   @Roles(USER)
   @Post('request-join-event')
-  async requestJoinEvent(@User('_id') _id, @Body() { idEvent }) {
+  async requestJoinEvent(@User() user, @Body() { idEvent }) {
     // {
     //   idEvent: string
     // }
-    const data = await this.userService.requestJoinEvent(_id, idEvent)
+    const data = await this.userService.requestJoinEvent(user._id, idEvent, user)
     return Reponse(data)
   }
 

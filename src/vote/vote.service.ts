@@ -1,32 +1,24 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
-import { VoteType, UserEventState } from '@utils'
+import { EnumUserEventVote, EnumUserEventState } from '@utils'
 import { getMongoRepository } from 'typeorm'
-import { VoteEntity, EventEntity, UserEntity } from '@entity'
+import { UserEventEntity, EventEntity, UserEntity } from '@entity'
 import * as moment from 'moment'
 
 @Injectable()
 export class VoteService {
-  async modifyVote(idUser: string, idEvent: string, type: VoteType) {
+  async modifyVote(idUser: string, idEvent: string, type: EnumUserEventVote) {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id: idEvent, isActive: true })
       if (!event) throw new HttpException('Event not found or has deleted', HttpStatus.NOT_FOUND)
-      if (!(event.users || []).some(item => item.idUser === idUser && item.state === UserEventState.APPROVED))
-        throw new HttpException(`You was not joined ${event.name}`, HttpStatus.NOT_FOUND)
-      const exist = await getMongoRepository(VoteEntity).findOne({ idUser, idEvent })
-      if (exist) {
-        exist.type = type
-        exist.updatedAt = moment().valueOf()
-        const saveVote = await getMongoRepository(VoteEntity).save(exist)
-        return !!saveVote
-      }
-      const newVote = new VoteEntity({
-        idEvent,
+      const userEventExist = await getMongoRepository(UserEventEntity).findOne({
         idUser,
-        type,
-        createdAt: moment().valueOf(),
-        updatedAt: moment().valueOf()
+        idEvent,
+        state: EnumUserEventState.APPROVED
       })
-      const saveVote = await getMongoRepository(VoteEntity).save(newVote)
+      if (userEventExist)
+        throw new HttpException(`You was not joined ${event.name}`, HttpStatus.NOT_FOUND)
+      userEventExist.typeVote = type
+      const saveVote = await getMongoRepository(UserEventEntity).save(userEventExist)
       return !!saveVote
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -34,10 +26,10 @@ export class VoteService {
   }
   async getallVoteByEvent(idEvent: string){
     try {
-      const votes = await getMongoRepository(VoteEntity).find({
+      const votes = await getMongoRepository(UserEventEntity).find({
         where: {
           idEvent,
-          type: { $ne: VoteType.NONE }
+          type: { $ne: EnumUserEventVote.NONE }
         },
         order: {
           createdAt: 'DESC'

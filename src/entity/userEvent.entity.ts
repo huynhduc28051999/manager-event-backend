@@ -1,10 +1,10 @@
 import { Entity, ObjectIdColumn, Column, BeforeInsert } from 'typeorm'
 import * as uuid from 'uuid'
-import { VoteType } from '@utils'
+import { EnumUserEventVote, EnumUserEventState, ByUser } from '@utils'
 import * as moment from 'moment'
 
-@Entity('votes')
-export class VoteEntity {
+@Entity('UserEvent')
+export class UserEventEntity {
 	@ObjectIdColumn()
 	_id: string
 
@@ -15,22 +15,30 @@ export class VoteEntity {
 	idEvent: string
 
 	@Column()
-	type: VoteType
+  typeVote: EnumUserEventVote
+
+  @Column()
+	state: EnumUserEventState
 
 	@Column()
-  createdAt: number
+	createdAt: number
+
+	@Column()
+  createdBy: ByUser
 
   @Column()
   updatedAt: number
 
+	@Column()
+	updatedBy: ByUser
+
 	@BeforeInsert()
 	async b4register() {
-		this._id = await uuid.v4()
+		this._id = this._id || await uuid.v4()
     this.createdAt = this.createdAt || moment().valueOf()
-    this.createdAt = moment().valueOf()
 	}
 
-	constructor(args: Partial<VoteEntity>) {
+	constructor(args: Partial<UserEventEntity>) {
 		Object.assign(this, args)
 	}
 }

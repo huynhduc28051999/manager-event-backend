@@ -1,10 +1,10 @@
 import { Entity, ObjectIdColumn, Column, BeforeInsert } from 'typeorm';
 import * as uuid from 'uuid'
 import * as bcrypt from 'bcrypt';
-import { ByUser, Gender } from '@utils';
+import { ByUser, EnumGender } from '@utils';
 import * as moment from 'moment'
 
-@Entity('users')
+@Entity('User')
 export class UserEntity {
 	@ObjectIdColumn()
 	_id: string
@@ -31,7 +31,7 @@ export class UserEntity {
 	birthday: number
 
 	@Column()
-	gender: Gender
+	gender: EnumGender
 
 	@Column()
 	isActive: boolean
@@ -56,10 +56,10 @@ export class UserEntity {
 
 	@BeforeInsert()
 	async b4register() {
-		this._id = await uuid.v4()
+		this._id = this._id || await uuid.v4()
 		this.createdAt = this.createdAt || moment().valueOf()
 		this.updatedAt = moment().valueOf()
-		this.password = await bcrypt.hash(this.password, 10)
+		this.password = this.password || await bcrypt.hash(this.password, 10)
 	}
 
 	constructor(args: Partial<UserEntity>) {

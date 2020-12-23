@@ -3,22 +3,19 @@ import * as uuid from 'uuid'
 import { ByUser } from '@utils'
 import * as moment from 'moment'
 
-@Entity('Group')
-export class GroupsEntity {
+@Entity('NotificationOfUser')
+export class NotificationOfUserEntity {
 	@ObjectIdColumn()
 	_id: string
 
 	@Column()
-	name: string
+	idUser: string
 
 	@Column()
-	avatar: string
+	content: string
 
 	@Column()
-	description: string
-
-	@Column()
-	isActive: boolean
+	isRead: boolean
 
 	@Column()
 	createdAt: number
@@ -34,12 +31,12 @@ export class GroupsEntity {
 
 	@BeforeInsert()
 	async b4register() {
-		this._id = this._id || await uuid.v4()
-		this.createdAt = this.createdAt || moment().valueOf()
-		this.updatedAt = moment().valueOf()
+    this._id = this._id || await uuid.v4()
+    this.createdAt = this.createdAt || moment().valueOf()
+    this.updatedAt = moment().valueOf()
 	}
 
-	constructor(args: Partial<GroupsEntity>) {
+	constructor(args: Partial<NotificationOfUserEntity>) {
 		Object.assign(this, args)
 	}
 }

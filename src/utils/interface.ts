@@ -6,7 +6,7 @@ export interface AddUserDTO {
   name: string
   password: string
   email: string
-  gender: Gender
+  gender: EnumGender
   phoneNumber: string
   avatar: string
   birthday: number
@@ -25,15 +25,15 @@ export interface UpdateUserDTO {
   avatar: string
   birthday: string
   role: string
-  gender: Gender
+  gender: EnumGender
 }
 export interface AddEventDTO {
   name: string
   idGroup: string
-  users: UserEvent[]
+  idsUser: string[]
   description: string
 }
-export enum EventState {
+export enum EnumEventState {
   COMPLETED = 'COMPLETED',
   PROCESSING = 'PROCESSING',
   CANCELLED = 'CANCELLED'
@@ -48,21 +48,18 @@ export interface FeedbackDTO {
 	content: string
 }
 
-export enum UserEventState {
+export enum EnumUserEventState {
   APPROVED = 'APPROVED',
   REQUESTED = 'REQUESTED',
   CANCELLED = 'CANCELLED'
 }
-export interface UserEvent {
-  idUser: string
-  state: UserEventState
-}
-export enum Gender {
+
+export enum EnumGender {
   MALE = 'MALE',
   FEMALE = 'FEMALE',
   ORTHER = 'ORTHER'
 }
-export enum VoteType {
+export enum EnumUserEventVote {
   LIKE = 'LIKE',
   DISLIKE = 'DISLIKE',
   NONE = 'NONE'
@@ -76,5 +73,11 @@ export interface ChangeProfile {
   phoneNumber: string
   avatar: string
   birthday: string
-  gender: Gender
+  gender: EnumGender
+}
+
+export interface UpdateEventDTO {
+  name: string
+  idGroup: string
+  description: string
 }

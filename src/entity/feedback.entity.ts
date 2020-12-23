@@ -2,7 +2,7 @@ import { Entity, ObjectIdColumn, Column, BeforeInsert } from 'typeorm'
 import * as uuid from 'uuid'
 import * as moment from 'moment'
 
-@Entity('feedback')
+@Entity('Feedback')
 export class FeedbackEntity {
 	@ObjectIdColumn()
 	_id: string
@@ -21,7 +21,7 @@ export class FeedbackEntity {
 
 	@BeforeInsert()
 	async b4register() {
-		this._id = await uuid.v4()
+		this._id = this._id || await uuid.v4()
 		this.createdAt = this.createdAt || moment().valueOf()
 	}
 

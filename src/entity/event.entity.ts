@@ -1,9 +1,9 @@
 import { Entity, ObjectIdColumn, Column, BeforeInsert } from 'typeorm'
 import * as uuid from 'uuid'
-import { ByUser, EventState, UserEvent } from '@utils'
+import { ByUser, EnumEventState } from '@utils'
 import * as moment from 'moment'
 
-@Entity('events')
+@Entity('Event')
 export class EventEntity {
 	@ObjectIdColumn()
 	_id: string
@@ -15,9 +15,6 @@ export class EventEntity {
 	idGroup: string
 
 	@Column()
-	users: UserEvent[]
-
-	@Column()
 	description: string
 
 	@Column()
@@ -27,7 +24,7 @@ export class EventEntity {
 	isLocked: boolean
 
 	@Column()
-	state: EventState
+	state: EnumEventState
 
 	@Column()
 	createdAt: number

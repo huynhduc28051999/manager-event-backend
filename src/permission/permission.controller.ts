@@ -18,7 +18,7 @@ export class PermissionController {
   }
 
   @Roles(ADMIN)
-  @Get('permission')
+  @Get()
   async permission(@Query('id') id) {
     const data = await this.permissionService.permission(id)
     return Reponse(data)

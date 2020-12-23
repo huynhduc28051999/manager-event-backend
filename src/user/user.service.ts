@@ -3,9 +3,8 @@ import * as bcrypt from 'bcrypt'
 import * as moment from 'moment'
 import { getMongoRepository } from "typeorm"
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common"
-import { ACCESS_TOKEN, AddUserDTO, LoginDTO, UpdateUserDTO, ByUser, UserEventState, ChangePasswordDTO } from '@utils'
-import { Permission, UserEntity, GroupsEntity, EventEntity } from '@entity'
-import { User } from '@common'
+import { ACCESS_TOKEN, AddUserDTO, LoginDTO, ByUser, ChangePasswordDTO } from '@utils'
+import { Permission, UserEntity, GroupsEntity, EventEntity, UserEventEntity } from '@entity'
 
 @Injectable()
 export class UserService {
@@ -34,7 +33,7 @@ export class UserService {
     try {
       const { email } = addUserDTO
       const userExist = await getMongoRepository(UserEntity).findOne({ email, isActive: true })
-      if (userExist) throw new HttpException('User exits', HttpStatus.CONFLICT)
+      if (userExist) throw new HttpException('User exist', HttpStatus.CONFLICT)
       const newUser = new UserEntity({
         ...addUserDTO,
         isActive: true,
@@ -129,34 +128,17 @@ export class UserService {
           }
         ])
         .toArray()
-        const events = await getMongoRepository(EventEntity).find({
-          where: {
-            users: {
-              $elemMatch: {
-                idUser: _id
-              }
-            }
-          }
-        })
-      user['events'] = events.map(item => {
-        if (Array.isArray(item.users)) {
-          const users = item.users.filter(user => user.state === UserEventState.APPROVED)
-          item.users = users
+      const userEvent = await getMongoRepository(UserEventEntity).find({
+        where: {
+          idUser: _id
         }
-        return item
       })
-      // const user = await getMongoRepository(UserEntity).findOne({ _id })
-      // if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND)
-      // const [userPermission, group] = await Promise.all<
-      //   Permission,
-      //   GroupsEntity
-      // >([
-      //   getMongoRepository(Permission).findOne({ _id: user.role }),
-      //   getMongoRepository(GroupsEntity).findOne({ _id: user.idGroup })
-      // ])
-
-      // user['permission'] = userPermission
-      // user['group'] = group
+      const events = await getMongoRepository(EventEntity).find({
+        where: {
+          _id: { $in: userEvent.map(item => item.idEvent) }
+        }
+      })
+      user['events'] = events
       delete user.password
       return user
     } catch (error) {
@@ -282,22 +264,26 @@ export class UserService {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
-  async requestJoinEvent(idUser: string, idEvent: string) {
+  async requestJoinEvent(idUser: string, idEvent: string, { _id, name }) {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id: idEvent })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
-      const { users = [] } = event
-      const idsUser = [...users.map(item => item.idUser)]
-      if (idsUser.some(item => item === idUser))
-        throw new HttpException('User has already requested this event', HttpStatus.CONFLICT)
-      users.push({
-        idUser,
-        state: UserEventState.REQUESTED
+      const userEventExist = await getMongoRepository(UserEventEntity).findOne({
+        idEvent,
+        idUser
       })
-      event.users = users
-      event.updatedAt = moment().valueOf()
-      const saveEvent = await getMongoRepository(EventEntity).save(event)
-      return !!saveEvent
+      if (!userEventExist) throw new HttpException('User has already requested this event', HttpStatus.CONFLICT)
+      const newUserEvent = new UserEventEntity({
+        idEvent,
+        idUser,
+        createdAt: moment().valueOf(),
+        createdBy: {
+          _id,
+          name
+        } 
+      })
+      const saveUserEvent = await getMongoRepository(UserEventEntity).save(newUserEvent)
+      return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }

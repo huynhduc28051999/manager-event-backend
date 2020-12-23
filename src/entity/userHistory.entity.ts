@@ -3,43 +3,30 @@ import * as uuid from 'uuid'
 import { ByUser } from '@utils'
 import * as moment from 'moment'
 
-@Entity('Group')
-export class GroupsEntity {
+@Entity('UserHistory')
+export class UserHistoryEntity {
 	@ObjectIdColumn()
 	_id: string
 
 	@Column()
-	name: string
+	idUser: string
 
 	@Column()
-	avatar: string
+	content: string
 
 	@Column()
-	description: string
-
-	@Column()
-	isActive: boolean
-
-	@Column()
-	createdAt: number
+	time: number
 
 	@Column()
 	createdBy: ByUser
 
-	@Column()
-	updatedAt: number
-
-	@Column()
-	updatedBy: ByUser
-
 	@BeforeInsert()
 	async b4register() {
 		this._id = this._id || await uuid.v4()
-		this.createdAt = this.createdAt || moment().valueOf()
-		this.updatedAt = moment().valueOf()
+		this.time = this.time || moment().valueOf()
 	}
 
-	constructor(args: Partial<GroupsEntity>) {
+	constructor(args: Partial<UserHistoryEntity>) {
 		Object.assign(this, args)
 	}
 }

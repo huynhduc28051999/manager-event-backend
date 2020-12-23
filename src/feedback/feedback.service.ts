@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 import { getMongoRepository } from 'typeorm'
-import { EventEntity, FeedbackEntity, UserEntity } from '@entity'
-import { FeedbackDTO, UserEventState } from '@utils'
+import { EventEntity, FeedbackEntity, UserEntity, UserEventEntity } from '@entity'
+import { FeedbackDTO, EnumUserEventState } from '@utils'
 
 @Injectable()
 export class FeedbackService {
@@ -61,7 +61,12 @@ export class FeedbackService {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id: input.idEvent, isActive: true })
       if (!event) throw new HttpException('Event not found or has deleted', HttpStatus.NOT_FOUND)
-      if (!(event.users || []).some(item => item.idUser === _id && item.state === UserEventState.APPROVED))
+      const userEvent = await getMongoRepository(UserEventEntity).findOne({
+        idEvent: input.idEvent,
+        idUser: _id,
+        state: EnumUserEventState.APPROVED
+      })
+      if (!userEvent)
         throw new HttpException(`You was not joined ${event.name}`, HttpStatus.NOT_FOUND)
       const inseted = await getMongoRepository(FeedbackEntity).insertOne(
         new FeedbackEntity({

@@ -20,14 +20,14 @@ export class FeedbackController {
   }
 
   @Roles(ADMIN, MANAGER, USER)
-  @Get('feedback-by-event')
+  @Get()
   async getFeedbackByEvent(@Query('id') id) {
     const data = await this.feedbackService.getFeedbackByEvent(id)
     return Reponse(data)
   }
 
   @Roles(ADMIN, MANAGER, USER)
-  @Post('add-feed-back')
+  @Post()
   async addFeedBack(@Body() input: FeedbackDTO, @User() user){
     const data = await this.feedbackService.addFeedback(input, user)
     this.appGateway.sendAlet(

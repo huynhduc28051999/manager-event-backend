@@ -1,8 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 import { getMongoRepository } from 'typeorm'
-import { EventEntity, UserEntity, GroupsEntity, FeedbackEntity, VoteEntity } from '@entity'
+import { EventEntity, UserEntity, GroupsEntity, FeedbackEntity, UserEventEntity } from '@entity'
 import * as moment from 'moment'
-import { AddEventDTO, EventState, UserEventState, VoteType } from '@utils'
+import { AddEventDTO, EnumEventState, EnumUserEventState, EnumUserEventVote, UpdateEventDTO } from '@utils'
 
 @Injectable()
 export class EventService {
@@ -41,31 +41,31 @@ export class EventService {
         const [
           feedbackCount,
           likeCount,
-          dislikeCount
+          dislikeCount,
+          userOfEvent
         ] = await Promise.all<
           number,
           number,
-          number
+          number,
+          any
         >([
           getMongoRepository(FeedbackEntity).count({
             idEvent: item._id
           }),
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.LIKE
+            typeVote: EnumUserEventVote.LIKE
           }),
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.DISLIKE
+            typeVote: EnumUserEventVote.DISLIKE
+          }),
+          getMongoRepository(UserEventEntity).find({
+            idEvent: item._id
           })
         ])
-        if (Array.isArray(item.users)) {
-          const users = item.users.map(user => {
-            user['user'] = userMap.get(user.idUser)
-            return user
-          })
-          item.users = users
-        }
+          const users = userOfEvent.map(item => userMap.get(item.idUser))
+          item['users'] = users
         item['feedbackCount'] = feedbackCount
         item['likeCount'] = likeCount
         item['dislikeCount'] = dislikeCount
@@ -80,6 +80,7 @@ export class EventService {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
+      const userEvents = await getMongoRepository(UserEventEntity).find({ idEvent: _id })
       const [
         users,
         group,
@@ -93,11 +94,15 @@ export class EventService {
         FeedbackEntity[],
         number,
         number,
-        VoteEntity
+        any
       >([
         getMongoRepository(UserEntity).find({
           where: {
-            _id: { $in: (event.users || []).map(item => item.idUser) }
+            _id: {
+              $in: userEvents
+                .filter(item => item.state !== EnumUserEventState.CANCELLED)
+                .map(item => item.idUser)
+            }
           }
         }),
         getMongoRepository(GroupsEntity).findOne({
@@ -106,17 +111,19 @@ export class EventService {
         getMongoRepository(FeedbackEntity).find({
           idEvent: _id
         }),
-        getMongoRepository(VoteEntity).count({
+        getMongoRepository(UserEventEntity).count({
           idEvent: _id,
-          type: VoteType.LIKE
+          typeVote: EnumUserEventVote.LIKE
         }),
-        getMongoRepository(VoteEntity).count({
+        getMongoRepository(UserEventEntity).count({
           idEvent: _id,
-          type: VoteType.DISLIKE
+          typeVote: EnumUserEventVote.DISLIKE
         }),
-        getMongoRepository(VoteEntity).findOne({
+        getMongoRepository(UserEventEntity).findOne({
           idEvent: _id,
-          idUser
+          idUser,
+          typeVote: EnumUserEventVote.DISLIKE,
+          state: EnumUserEventState.APPROVED
         })
       ])
       if (vote) {
@@ -130,13 +137,7 @@ export class EventService {
       event['group'] = group
       event['dislikeCount'] = dislikeCount
       event['likeCount'] = likeCount
-      if (Array.isArray(event.users)) {
-        const users = event.users.map(user => {
-          user['user'] = userMap.get(user.idUser)
-          return user
-        })
-        event.users = users
-      }
+      event['users'] = users
       event['feedbacks'] = feedbacks.map(item => {
         item['user'] = userMap.get(item.idUser)
         return item
@@ -167,23 +168,19 @@ export class EventService {
   }
   async addEvent(input: AddEventDTO, {_id, name }) {
     try {
-      const { users = [] } = input
+      const { idsUser = [] } = input
       const eventExist = await getMongoRepository(EventEntity).findOne({
         name: input.name,
         isActive: true,
         idGroup: input.idGroup
       })
-      users.push({
-        idUser: _id,
-        state: UserEventState.APPROVED
-      })
       if (eventExist) throw new HttpException('Event has already exist', HttpStatus.CONFLICT)
+      delete input.idsUser
       const newEvent = new EventEntity({
         ...input,
-        users,
         isActive: true,
         isLocked: false,
-        state: EventState.PROCESSING,
+        state: EnumEventState.PROCESSING,
         createdAt: moment().valueOf(),
         createdBy: {
           _id,
@@ -191,12 +188,18 @@ export class EventService {
         }
       })
       const saveEvent = await getMongoRepository(EventEntity).save(newEvent)
+      const arrNewUserEvent = idsUser.map(item => new UserEventEntity({
+        idEvent: saveEvent._id,
+        idUser: item,
+        state: EnumUserEventState.APPROVED
+      }))
+      await getMongoRepository(UserEventEntity).insertMany(arrNewUserEvent)
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
-  async updateEvent(_id: string, input: AddEventDTO, {_id: idUser, name }) {
+  async updateEvent(_id: string, input: UpdateEventDTO, {_id: idUser, name }) {
     try {
       const eventExist = await getMongoRepository(EventEntity).findOne({
         where: {
@@ -252,9 +255,9 @@ export class EventService {
         isActive: true
       })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
-      if (event.state === EventState.COMPLETED)
+      if (event.state === EnumEventState.COMPLETED)
         throw new HttpException('Event has already completed', HttpStatus.NOT_FOUND)
-      event.state = EventState.COMPLETED
+      event.state = EnumEventState.COMPLETED
       event.verifiedAt = moment().valueOf()
       event.verifiedBy = {
         _id: idUser,
@@ -273,9 +276,9 @@ export class EventService {
         isActive: true
       })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
-      if (event.state === EventState.CANCELLED)
+      if (event.state === EnumEventState.CANCELLED)
         throw new HttpException('Event has already cancelled', HttpStatus.NOT_FOUND)
-      event.state = EventState.CANCELLED
+      event.state = EnumEventState.CANCELLED
       event.updatedAt = moment().valueOf()
       event.updatedBy = {
         _id: idUser,
@@ -291,22 +294,47 @@ export class EventService {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
-      const { users = [] } = event
-      const idsUser = [...users.map(item => item.idUser)]
-      if (idsUser.some(item => item === idUser))
-        throw new HttpException('User has already requested this event', HttpStatus.CONFLICT)
-      users.push({
+      const userEventExist = await getMongoRepository(UserEventEntity).findOne({
         idUser,
-        state: UserEventState.APPROVED
+        idEvent: _id,
+        state: EnumUserEventState.APPROVED
       })
-      event.users = users
-      event.updatedAt = moment().valueOf()
-      event.updatedBy = {
-        _id: idUserUpdate,
-        name
+      if (userEventExist)
+        throw new HttpException('User has already joined this event', HttpStatus.CONFLICT)
+      const userEventUnApproved = await getMongoRepository(UserEventEntity).findOne({
+        where: {
+          idEvent: _id,
+          idUser,
+          state: EnumUserEventState.REQUESTED
+        }
+      })
+      if (userEventUnApproved) {
+        const updated = await getMongoRepository(UserEventEntity).updateOne(
+          { _id: userEventUnApproved._id },
+          {
+            $set: {
+              state: EnumUserEventState.APPROVED,
+              updatedAt: moment().valueOf(),
+              updatedBy: {
+                _id: idUserUpdate,
+                name
+              }
+            }
+          }
+        )
+        return !!updated.result.ok
       }
-      const saveEvent = await getMongoRepository(EventEntity).save(event)
-      return !!saveEvent
+      const saveUserEvent = await getMongoRepository(UserEventEntity).save(new UserEventEntity({
+        idEvent: _id,
+        idUser,
+        state: EnumUserEventState.APPROVED,
+        createdAt: moment().valueOf(),
+        createdBy: {
+          _id: idUserUpdate,
+          name
+        }
+      }))
+      return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -315,19 +343,23 @@ export class EventService {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
-      const { users = [] } = event
-      const idsUser = [...users.map(item => item.idUser)]
-      if (!idsUser.some(item => item === idUser))
+      const userEventExist = await getMongoRepository(UserEventEntity).findOne({
+        where: {
+          idEvent: _id,
+          idUser,
+          state: EnumUserEventState.APPROVED
+        }
+      })
+      if (!userEventExist)
         throw new HttpException('User was not joined this event', HttpStatus.CONFLICT)
-      const newUsers = users.filter(user => user.idUser !== idUser)
-      event.users = newUsers
-      event.updatedAt = moment().valueOf()
-      event.updatedBy = {
+      userEventExist.state = EnumUserEventState.CANCELLED
+      userEventExist.updatedAt = moment().valueOf()
+      userEventExist.updatedBy = {
         _id: idUserUpdate,
         name
       }
-      const saveEvent = await getMongoRepository(EventEntity).save(event)
-      return !!saveEvent
+      const saveUserEvent = await getMongoRepository(UserEventEntity).save(userEventExist)
+      return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -336,22 +368,32 @@ export class EventService {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id: idEvent })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
-      const { users = [] } = event
-      const idsUser = [...users.map(item => item.idUser)]
-      if (!idsUser.some(item => item === idUser))
-        throw new HttpException('User was not joined this event', HttpStatus.CONFLICT)
-      const newUsers = users.map(item => {
-        if (item.idUser === idUser) item.state = UserEventState.APPROVED
-        return item
+      const userEventExist = await getMongoRepository(UserEventEntity).findOne({
+        where: {
+          idEvent,
+          idUser,
+          state: EnumUserEventState.APPROVED
+        }
       })
-      event.users = newUsers
-      event.updatedAt = moment().valueOf()
-      event.updatedBy = {
+      if (userEventExist)
+        throw new HttpException('User was joined this event', HttpStatus.CONFLICT)
+      const userEventRequested = await getMongoRepository(UserEventEntity).findOne({
+        where: {
+          idEvent,
+          idUser,
+          state: EnumUserEventState.REQUESTED
+        }
+      })
+      if (!userEventRequested)
+        throw new HttpException('User haven\' requested to join this event', HttpStatus.CONFLICT)
+      userEventRequested.state = EnumUserEventState.APPROVED
+      userEventRequested.updatedAt = moment().valueOf()
+      userEventRequested.updatedBy = {
         _id: idUserUpdate,
         name
       }
-      const saveEvent = await getMongoRepository(EventEntity).save(event)
-      return !!saveEvent
+      const saveUserEvent = await getMongoRepository(UserEventEntity).save(userEventRequested)
+      return !!saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -397,31 +439,31 @@ export class EventService {
         const [
           feedbackCount,
           likeCount,
-          dislikeCount
+          dislikeCount,
+          userOfEvent
         ] = await Promise.all<
           number,
           number,
-          number
+          number,
+          any
         >([
           getMongoRepository(FeedbackEntity).count({
             idEvent: item._id
           }),
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.LIKE
+            typeVote: EnumUserEventVote.LIKE
           }),
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.DISLIKE
+            typeVote: EnumUserEventVote.DISLIKE
+          }),
+          getMongoRepository(UserEventEntity).find({
+            idEvent: item._id
           })
         ])
-        if (Array.isArray(item.users)) {
-          const users = item.users.map(user => {
-            user['user'] = userMap.get(user.idUser)
-            return user
-          })
-          item.users = users
-        }
+          const users = userOfEvent.map(item => userMap.get(item.idUser))
+          item['users'] = users
         item['feedbackCount'] = feedbackCount
         item['likeCount'] = likeCount
         item['dislikeCount'] = dislikeCount
@@ -446,13 +488,13 @@ export class EventService {
       })
       for (const item of events) {
         const [likeCount, dislikeCount] = await Promise.all<number, number> ([
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.LIKE
+            typeVote: EnumUserEventVote.LIKE
           }),
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.DISLIKE
+            typeVote: EnumUserEventVote.DISLIKE
           })
         ])
         item['likeCount'] = likeCount
@@ -465,13 +507,15 @@ export class EventService {
   }
   async getEventByUserId(idUser: string) {
     try {
+      const useEvent = await getMongoRepository(UserEventEntity).find({
+        where: {
+          idUser,
+          state: EnumUserEventState.APPROVED
+        }
+      })
       const events = await getMongoRepository(EventEntity).find({
         where: {
-          users: {
-            $elemMatch: {
-              idUser
-            }
-          },
+          _id: { $in: useEvent.map(item => item.idEvent) },
           isActive: true
         },
         order: {
@@ -481,13 +525,13 @@ export class EventService {
       })
       for (const item of events) {
         const [likeCount, dislikeCount] = await Promise.all<number, number> ([
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.LIKE
+            typeVote: EnumUserEventVote.LIKE
           }),
-          getMongoRepository(VoteEntity).count({
+          getMongoRepository(UserEventEntity).count({
             idEvent: item._id,
-            type: VoteType.DISLIKE
+            typeVote: EnumUserEventVote.DISLIKE
           })
         ])
         item['likeCount'] = likeCount
