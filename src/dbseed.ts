@@ -4,16 +4,14 @@ import * as moment from 'moment'
 async function main() {
 	console.log('🌱  Database seeder is running')
 
-  const userName = 'tranvu14'
-  const password = 'F.U.baby1412'
-	const dbName = 'teambuilding'
+  const userName = 'huynhduc'
+  const password = 'duc123456789'
+	const dbName = 'eventmanage'
 
-	const url = `mongodb+srv://${userName}:${password}@cluster0-sudrv.mongodb.net/${dbName}?retryWrites=true&w=majority`
+	const url = `mongodb+srv://${userName}:${password}@cluster0.pvxto.mongodb.net/${dbName}`
 	console.log(`🔗  MONGO_URL: ${url}`)
 
-	const client = new MongoClient(url, {
-		useNewUrlParser: true
-	})
+	const client = new MongoClient(url)
 
 	try {
 		await client.connect()
@@ -46,9 +44,6 @@ async function main() {
 			await db.collection('User').findOneAndUpdate(
 				{ _id: item._id },
 				{
-					$setOnInsert: {
-						_id: item._id
-					},
 					$set: {
 						email: item.email,
 						name: item.name,
@@ -88,9 +83,6 @@ async function main() {
 			await db.collection('Permission').findOneAndUpdate(
 				{ _id: item._id },
 				{
-					$setOnInsert: {
-						_id: item._id
-					},
 					$set: {
 						code: item.code,
 						description: item.description,
@@ -118,9 +110,6 @@ async function main() {
 			await db.collection('Group').findOneAndUpdate(
 				{ _id: item._id },
 				{
-					$setOnInsert: {
-						_id: item._id
-					},
 					$set: {
 						name: item.name,
 						description: item.description,
@@ -156,9 +145,6 @@ async function main() {
 			await db.collection('Event').findOneAndUpdate(
 				{ _id: item._id },
 				{
-					$setOnInsert: {
-						_id: item._id
-					},
 					$set: {
 						name: item.name,
 						description: item.description,
@@ -190,9 +176,6 @@ async function main() {
 			await db.collection('UserEvent').findOneAndUpdate(
 				{ _id: item._id },
 				{
-					$setOnInsert: {
-						_id: item._id
-					},
 					$set: {
 						...item,
 						createdAt: moment().valueOf(),

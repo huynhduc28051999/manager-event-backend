@@ -17,7 +17,7 @@ import { VoteModule } from './vote/vote.module';
     AuthModule,
     TypeOrmModule.forRoot(
         {
-          url: 'mongodb+srv://tranvu14:F.U.baby1412@cluster0-sudrv.mongodb.net/teambuilding',
+          url: 'mongodb+srv://huynhduc:duc123456789@cluster0.pvxto.mongodb.net/eventmanage',
           type: "mongodb",
           entities: [join(__dirname, '**/**.entity{.ts,.js}')],
           synchronize: true,
