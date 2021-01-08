@@ -27,10 +27,9 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   async handleConnection(client: Socket) {
-    // try {
       this.logger.log(`Client Connected: ${client.id}`)
   }
-  // @SubscribeMessage('msgToSever')
+
   sendAlet(message: string, data: string[] = [], idUser) {
     // this.users.map(item => {
     //   // Điều kiện nhận thông báo
@@ -45,7 +44,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     // })
   }
   @UseGuards(WsGuard)
-  // @Roles('USER')
   @SubscribeMessage('msgToSever')
   async msgToServer(socket: Socket, data: any) {
     console.log(data)

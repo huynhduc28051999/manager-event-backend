@@ -15,6 +15,9 @@ export class EventEntity {
 	idGroup: string
 
 	@Column()
+	avatar: string
+
+	@Column()
 	description: string
 
 	@Column()

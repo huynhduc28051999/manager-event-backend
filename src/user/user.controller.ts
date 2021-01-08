@@ -42,7 +42,7 @@ export class UserController {
   }
 
   @Roles(ADMIN)
-  @Delete()
+  @Post('delete-user')
   async deleteUsers(@User() user, @Body() { ids }) {
     // {
     //   ids: []

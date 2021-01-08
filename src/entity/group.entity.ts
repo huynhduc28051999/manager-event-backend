@@ -15,6 +15,12 @@ export class GroupsEntity {
 	avatar: string
 
 	@Column()
+	title: string
+
+	@Column()
+	background: string
+
+	@Column()
 	description: string
 
 	@Column()

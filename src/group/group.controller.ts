@@ -46,7 +46,7 @@ export class GroupController {
   }
 
   @Roles(ADMIN)
-  @Delete()
+  @Post('delete-group')
   async deleteGroups(@User() user, @Body() { ids }) {
     const data = await this.groupService.deleteGroups(ids, user)
     // this.appGateway.sendAlet(
