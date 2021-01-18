@@ -12,7 +12,7 @@ export class GroupController {
     private readonly appGateway: AppGateway
   ) { }
 
-  @Roles(ADMIN)
+  @Roles(ADMIN, MANAGER)
   @Get('get-all-group')
   async getAllGroups() {
     const data = await this.groupService.getAllGroups()

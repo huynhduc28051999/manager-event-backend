@@ -33,6 +33,8 @@ export interface AddEventDTO {
   idsUser: string[]
   description: string
   avatar: string
+  date: number
+  duration: number
 }
 export enum EnumEventState {
   COMPLETED = 'COMPLETED',
@@ -84,4 +86,6 @@ export interface UpdateEventDTO {
   idGroup: string
   description: string
   avatar: string
+  date: number
+  duration: number
 }

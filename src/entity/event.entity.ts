@@ -21,6 +21,15 @@ export class EventEntity {
 	description: string
 
 	@Column()
+	date: number
+
+	@Column()
+	duration: number
+
+	@Column()
+	endTime: number
+
+	@Column()
 	isActive: boolean
 
 	@Column()

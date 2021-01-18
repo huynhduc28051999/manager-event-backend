@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Get, Query, Post, Body } from '@nestjs/common'
+import { Controller, UseGuards, Get, Query, Post, Body, Put } from '@nestjs/common'
 import { AuthGuard, Roles, Reponse, User } from '@common'
 import { ADMIN, MANAGER, AddEventDTO } from '@utils'
 import { EventService } from './event.service'
@@ -18,7 +18,7 @@ export class EventController {
   }
 
   @Roles(ADMIN, MANAGER)
-  @Get('event-by-id')
+  @Get()
   async getEventById(@Query('id') id: string) {
     const data = await this.eventService.getEventById(id)
     return Reponse(data)
@@ -39,14 +39,14 @@ export class EventController {
   }
 
   @Roles(MANAGER)
-  @Post('add-event')
+  @Post()
   async addEvent(@Body() input: AddEventDTO, @User() user) {
     const data = await this.eventService.addEvent(input, user)
     return Reponse(!!data)
   }
 
   @Roles(MANAGER)
-  @Post('update-event')
+  @Put()
   async updateEvent(@Body() { _id, input }, @User() user) {
     const data = await this.eventService.updateEvent(_id, input, user)
     return Reponse(!!data)
@@ -101,6 +101,16 @@ export class EventController {
   @Get('get-event-by-user')
   async getEventByUser(@Query('id') id) {
     const data = await this.eventService.getEventByUserId(id)
+    return Reponse(data)
+  }
+  @Get('get-event-by-range-date')
+  async getEventByRangeDate(
+    @Query('startDate') startDate,
+    @Query('endDate') endDate
+  ) {
+    const start = parseFloat(startDate)
+    const end = parseFloat(endDate)
+    const data = await this.eventService.getEventByRangeDate(start, end)
     return Reponse(data)
   }
 }

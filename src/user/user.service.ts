@@ -167,6 +167,7 @@ export class UserService {
   }
   async updateUser(_id: string, input, { _id: idUser, name }: ByUser) {
     try {
+      if (input.password) input.password = await bcrypt.hash(input.password, 10)
       const update = await getMongoRepository(UserEntity).updateOne(
         {
           _id,

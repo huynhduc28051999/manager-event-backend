@@ -195,6 +195,9 @@ export class EventService {
         isActive: true,
         isLocked: false,
         state: EnumEventState.PROCESSING,
+        endTime: moment(input.date)
+          .add(input.duration, 'm')
+          .valueOf(),
         createdAt: moment().valueOf(),
         createdBy: {
           _id,
@@ -202,9 +205,16 @@ export class EventService {
         }
       })
       const saveEvent = await getMongoRepository(EventEntity).save(newEvent)
-      const arrNewUserEvent = idsUser.map(item => new UserEventEntity({
+      idsUser.push(_id)
+      const listUser = await getMongoRepository(UserEntity).find({
+        where: {
+          _id: { $in: idsUser },
+          isActive: true
+        }
+      })
+      const arrNewUserEvent = listUser.map(item => new UserEventEntity({
         idEvent: saveEvent._id,
-        idUser: item,
+        idUser: item._id,
         state: EnumUserEventState.APPROVED
       }))
       await getMongoRepository(UserEventEntity).insertMany(arrNewUserEvent)
@@ -219,6 +229,7 @@ export class EventService {
       }))
       return saveEvent
     } catch (error) {
+      console.log(error)
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -633,5 +644,21 @@ export class EventService {
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
+  }
+  async getEventByRangeDate(startDate: number, endDate: number) {
+    const events = await getMongoRepository(EventEntity).find({
+      where: {
+        isActive: true,
+        $or: [
+          {
+            $and: [{ date: { $gte: startDate } }, { date: { $lte: endDate } }]
+          },
+          {
+            $and: [{ endTime: { $gte: startDate } }, { endTime: { $lte: endDate } }]
+          }
+        ]
+      }
+    })
+    return events
   }
 }

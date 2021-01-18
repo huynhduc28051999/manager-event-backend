@@ -59,7 +59,7 @@ export class UserEntity {
 		this._id = this._id || await uuid.v4()
 		this.createdAt = this.createdAt || moment().valueOf()
 		this.updatedAt = moment().valueOf()
-		this.password = this.password || await bcrypt.hash(this.password, 10)
+		this.password = await bcrypt.hash(this.password, 10)
 	}
 
 	constructor(args: Partial<UserEntity>) {
