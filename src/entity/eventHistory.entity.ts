@@ -22,7 +22,7 @@ export class EventHistoryEntity {
 
 	@BeforeInsert()
 	async b4register() {
-		this._id = this._id || await uuid.v4()
+		this._id = await uuid.v4()
 		this.time = this.time || moment().valueOf()
 	}
 

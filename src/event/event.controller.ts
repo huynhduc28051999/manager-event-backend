@@ -113,4 +113,11 @@ export class EventController {
     const data = await this.eventService.getEventByRangeDate(start, end)
     return Reponse(data)
   }
+  @Get('event-history')
+  async getEventHistory(
+    @Query('idEvent') idEvent
+  ) {
+    const data = await this.eventService.getHistoryEvent(idEvent)
+    return Reponse(data)
+  }
 }

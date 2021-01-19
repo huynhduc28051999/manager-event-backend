@@ -218,15 +218,16 @@ export class EventService {
         state: EnumUserEventState.APPROVED
       }))
       await getMongoRepository(UserEventEntity).insertMany(arrNewUserEvent)
-      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
-        idEvent: _id,
+      const history = new EventHistoryEntity({
+        idEvent: newEvent._id,
         content: `${name} đã tạo sự kiện ${newEvent.name}`,
         time: moment().valueOf(),
         createdBy: {
           _id,
           name
         }
-      }))
+      })
+      await getMongoRepository(EventHistoryEntity).insertOne(history)
       return saveEvent
     } catch (error) {
       console.log(error)
@@ -660,5 +661,9 @@ export class EventService {
       }
     })
     return events
+  }
+  async getHistoryEvent(idEvent: string) {
+    const listHistory = await getMongoRepository(EventHistoryEntity).find({ idEvent })
+    return listHistory
   }
 }
