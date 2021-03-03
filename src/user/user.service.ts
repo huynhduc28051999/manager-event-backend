@@ -38,6 +38,7 @@ export class UserService {
         ...addUserDTO,
         isActive: true,
         isLocked: false,
+		    password: await bcrypt.hash(addUserDTO.password, 10),
         createdBy: {
           _id,
           name
