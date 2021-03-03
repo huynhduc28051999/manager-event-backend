@@ -8,7 +8,8 @@ async function main() {
   const password = 'duc123456789'
 	const dbName = 'eventmanage'
 
-	const url = `mongodb+srv://${userName}:${password}@cluster0.pvxto.mongodb.net/${dbName}`
+	// const url = `mongodb+srv://${userName}:${password}@cluster0.pvxto.mongodb.net/${dbName}`
+	const url = `mongodb://localhost:27017/${dbName}`
 	console.log(`🔗  MONGO_URL: ${url}`)
 
 	const client = new MongoClient(url)
@@ -29,10 +30,10 @@ async function main() {
 			},
 			{
 				_id: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
-				email: 'testadd@gmail.com',
-				name: 'testadd',
+				email: 'huynhduc28051999@gmail.com',
+				name: 'huynh duc',
 				password: '$2b$10$71Y/3aVMxfVpUJ6fob/KEugdaOq9tQCxuSCibdgKDy0tUGiNt5/J6',
-				role: '0',
+				role: '2',
 				idGroup: '1',
 				createdBy: {
 					_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
@@ -128,64 +129,64 @@ async function main() {
 		// 	idUser: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
 		// 	state: 'APPROVED'
 		// }],
-		const events = [
-			{
-				_id: '1',
-				name: 'test event',
-				idGroup: '1',
-				description: 'noi dung test event',
-				state: 'PROCESSING',
-				createdBy: {
-					_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
-					name: 'admin'
-				}
-			}
-		]
-		events.map(async item => {
-			await db.collection('Event').findOneAndUpdate(
-				{ _id: item._id },
-				{
-					$set: {
-						name: item.name,
-						description: item.description,
-						idGroup: item.idGroup,
-						isActive: true,
-						isLocked: false,
-						state: item.state,
-						createdAt: moment().valueOf(),
-						createdBy: item.createdBy,
-						updatedAt: moment().valueOf()
-					}
-				},
-				{ upsert: true }
-			)
-		})
-		const userEvent = [
-			{
-				_id: '1',
-				idEvent: '1',
-				idUser: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
-				state: 'APPROVED',
-				createdBy: {
-					_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
-					name: 'admin'
-				}
-			}
-		]
-		userEvent.map(async item => {
-			await db.collection('UserEvent').findOneAndUpdate(
-				{ _id: item._id },
-				{
-					$set: {
-						...item,
-						createdAt: moment().valueOf(),
-						createdBy: item.createdBy,
-						updatedAt: moment().valueOf()
-					}
-				},
-				{ upsert: true }
-			)
-		})
+		// const events = [
+		// 	{
+		// 		_id: '1',
+		// 		name: 'test event',
+		// 		idGroup: '1',
+		// 		description: 'noi dung test event',
+		// 		state: 'PROCESSING',
+		// 		createdBy: {
+		// 			_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
+		// 			name: 'admin'
+		// 		}
+		// 	}
+		// ]
+		// events.map(async item => {
+		// 	await db.collection('Event').findOneAndUpdate(
+		// 		{ _id: item._id },
+		// 		{
+		// 			$set: {
+		// 				name: item.name,
+		// 				description: item.description,
+		// 				idGroup: item.idGroup,
+		// 				isActive: true,
+		// 				isLocked: false,
+		// 				state: item.state,
+		// 				createdAt: moment().valueOf(),
+		// 				createdBy: item.createdBy,
+		// 				updatedAt: moment().valueOf()
+		// 			}
+		// 		},
+		// 		{ upsert: true }
+		// 	)
+		// })
+		// const userEvent = [
+		// 	{
+		// 		_id: '1',
+		// 		idEvent: '1',
+		// 		idUser: 'cb66691e-161e-4a0f-a3fc-6af347903e87',
+		// 		state: 'APPROVED',
+		// 		createdBy: {
+		// 			_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
+		// 			name: 'admin'
+		// 		}
+		// 	}
+		// ]
+		// userEvent.map(async item => {
+		// 	await db.collection('UserEvent').findOneAndUpdate(
+		// 		{ _id: item._id },
+		// 		{
+		// 			$set: {
+		// 				...item,
+		// 				createdAt: moment().valueOf(),
+		// 				createdBy: item.createdBy,
+		// 				updatedAt: moment().valueOf()
+		// 			}
+		// 		},
+		// 		{ upsert: true }
+		// 	)
+		// })
 		client.close()
 		console.log('💤  Server off')
 	} catch (err) {

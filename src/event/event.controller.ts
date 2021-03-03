@@ -88,6 +88,13 @@ export class EventController {
   }
 
   @Roles(MANAGER)
+  @Post('reopen-event')
+  async reopenEvent(@Body() { _id }, @User() user) {
+    const data = await this.eventService.reopenEvent(_id, user)
+    return Reponse(data)
+  }
+
+  @Roles(MANAGER)
   @Post('approve-user-request')
   async approveUserRequest(@Body() { idUser, idEvent }, @User() user) {
     const data = await this.eventService.approveUserRequest(idUser, idEvent, user)
@@ -118,6 +125,22 @@ export class EventController {
     @Query('idEvent') idEvent
   ) {
     const data = await this.eventService.getHistoryEvent(idEvent)
+    return Reponse(data)
+  }
+  @Get('search-event')
+  async searchEvent (
+    @Query('searchBy') searchBy,
+    @Query('keywords') keywords,
+    @User() user
+  ) {
+    const data = await this.eventService.searchEvent(searchBy, keywords, user)
+    return Reponse(data)
+  }
+  @Get('user-by-event')
+  async userByEvent (
+    @Query('idEvent') idEvent
+  ) {
+    const data = await this.eventService.getUserByEvent(idEvent)
     return Reponse(data)
   }
 }

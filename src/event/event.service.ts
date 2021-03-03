@@ -250,6 +250,9 @@ export class EventService {
         {
           $set: {
             ...input,
+            endTime: moment(input.date)
+            .add(input.duration, 'm')
+            .valueOf(),
             updatedAt: moment().valueOf(),
             updatedBy: {
               _id: idUser,
@@ -665,5 +668,95 @@ export class EventService {
   async getHistoryEvent(idEvent: string) {
     const listHistory = await getMongoRepository(EventHistoryEntity).find({ idEvent })
     return listHistory
+  }
+  async reopenEvent(_id: string, {_id: idUser, name }) {
+    try {
+      const event = await getMongoRepository(EventEntity).findOne({
+        _id,
+        isActive: true
+      })
+      if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
+      if (event.state === EnumEventState.PROCESSING)
+        throw new HttpException('Event has already processing', HttpStatus.NOT_FOUND)
+      event.state = EnumEventState.PROCESSING
+      event.updatedAt = moment().valueOf()
+      event.updatedBy = {
+        _id: idUser,
+        name
+      }
+      const saveEvent = await getMongoRepository(EventEntity).save(event)
+      
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent: _id,
+        content: `${name} đã mở lại sự kiện này`,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUser,
+          name
+        }
+      }))
+      return saveEvent
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+  async searchEvent(searchBy: string, keywords: string, user) {
+    try {
+      const condition = {
+        idGroup: user.idGroup,
+        isActive: true,
+        isLocked: false
+      }
+      if (keywords) {
+        if (searchBy === 'state') {
+          condition[searchBy] = keywords
+        } else {
+          condition[searchBy] = { $regex: keywords, $options: 'siu' }
+        }
+      }
+      const events = await getMongoRepository(EventEntity).find({
+        where: condition,
+        order: {
+          date: 'ASC'
+        }
+      })
+      const userEvents = await getMongoRepository(UserEventEntity).find({
+        where: {
+          idEvent: events.map(item => item._id),
+          idUser: user._id
+        }
+      })
+      const userEventHash = {}
+      userEvents.forEach(item => {
+        userEventHash[item.idEvent] = item
+      })
+      return events.map(item => {
+        return {
+          ...item,
+          userEventByMe: userEventHash[item._id]
+        }
+      })
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+  async getUserByEvent(idEvent: string) {
+    try {
+      const userEvents = await getMongoRepository(UserEventEntity).find({
+        idEvent
+      })
+      const users = await getMongoRepository(UserEntity).find({
+        where: { _id: { $in: userEvents.map(item => item.idUser) } }
+      })
+      const userMap = new Map(users.map(item => [item._id, item]))
+      return userEvents.map(item => {
+        return {
+          ...item,
+          user: userMap.get(item.idUser)
+        }
+      })
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
   }
 }
