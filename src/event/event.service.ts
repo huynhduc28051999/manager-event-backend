@@ -180,7 +180,7 @@ export class EventService {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
-  async addEvent(input: AddEventDTO, {_id, name }) {
+  async addEvent(input: AddEventDTO, {_id, name, idGroup }) {
     try {
       const { idsUser = [] } = input
       const eventExist = await getMongoRepository(EventEntity).findOne({
@@ -205,7 +205,9 @@ export class EventService {
         }
       })
       const saveEvent = await getMongoRepository(EventEntity).save(newEvent)
-      idsUser.push(_id)
+      if (idGroup === input.idGroup) {
+        idsUser.push(_id)
+      }
       const listUser = await getMongoRepository(UserEntity).find({
         where: {
           _id: { $in: idsUser },
@@ -386,7 +388,7 @@ export class EventService {
         }
       })
       if (userEventUnApproved) {
-        const updated = await getMongoRepository(UserEventEntity).updateOne(
+        const updated = await getMongoRepository(UserEventEntity).findOneAndUpdate(
           { _id: userEventUnApproved._id },
           {
             $set: {
@@ -397,9 +399,12 @@ export class EventService {
                 name
               }
             }
+          },
+          {
+            returnOriginal: false
           }
         )
-        return !!updated.result.ok
+        return updated.value
       }
       const saveUserEvent = await getMongoRepository(UserEventEntity).save(new UserEventEntity({
         idEvent: _id,
@@ -421,7 +426,7 @@ export class EventService {
           name
         }
       }))
-      return !!saveUserEvent
+      return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -456,7 +461,7 @@ export class EventService {
           name
         }
       }))
-      return !!saveUserEvent
+      return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -500,7 +505,7 @@ export class EventService {
           name
         }
       }))
-      return !!saveUserEvent
+      return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -755,6 +760,77 @@ export class EventService {
           user: userMap.get(item.idUser)
         }
       })
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+  async getAllUserByEvent(idEvent: string) {
+    try {
+      const event = await getMongoRepository(EventEntity).findOne({
+        _id: idEvent
+      })
+      if (!event) throw new HttpException('event not found', HttpStatus.NOT_FOUND)
+      
+      const users = await getMongoRepository(UserEntity).find({
+        where: {
+          idGroup: event.idGroup
+        }
+      })
+      const userEvents = await getMongoRepository(UserEventEntity).find({
+        idEvent
+      })
+
+      const userEventMap = new Map(userEvents.map(item => [item.idUser, item]))
+      return users.map(item => {
+        return {
+          ...item,
+          userEvent: userEventMap.get(item._id)
+        }
+      })
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+  async cancelUserRequest(idUser: string, idEvent: string, { _id: idUserUpdate, name }) {
+    try {
+      const event = await getMongoRepository(EventEntity).findOne({ _id: idEvent })
+      if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
+      const userEventExist = await getMongoRepository(UserEventEntity).findOne({
+        where: {
+          idEvent,
+          idUser,
+          state: EnumUserEventState.APPROVED
+        }
+      })
+      if (userEventExist)
+        throw new HttpException('User was joined this event', HttpStatus.CONFLICT)
+      const userEventRequested = await getMongoRepository(UserEventEntity).findOne({
+        where: {
+          idEvent,
+          idUser,
+          state: EnumUserEventState.REQUESTED
+        }
+      })
+      if (!userEventRequested)
+        throw new HttpException('User haven\' requested to join this event', HttpStatus.CONFLICT)
+      userEventRequested.state = EnumUserEventState.CANCELLED
+      userEventRequested.updatedAt = moment().valueOf()
+      userEventRequested.updatedBy = {
+        _id: idUserUpdate,
+        name
+      }
+      const saveUserEvent = await getMongoRepository(UserEventEntity).save(userEventRequested)
+      const user = await getMongoRepository(UserEntity).findOne({ _id: idUser })
+      await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
+        idEvent,
+        content: `${name} đã xóa yêu cầu tham gia sự kiện ${event.name} của ${user.name} `,
+        time: moment().valueOf(),
+        createdBy: {
+          _id: idUserUpdate,
+          name
+        }
+      }))
+      return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }

@@ -100,16 +100,19 @@ export class EventController {
     const data = await this.eventService.approveUserRequest(idUser, idEvent, user)
     return Reponse(data)
   }
+
   @Get('get-event-by-group')
   async getEventByGroup(@Query('id') id) {
     const data = await this.eventService.getEventByGroup(id)
     return Reponse(data)
   }
+
   @Get('get-event-by-user')
   async getEventByUser(@Query('id') id) {
     const data = await this.eventService.getEventByUserId(id)
     return Reponse(data)
   }
+
   @Get('get-event-by-range-date')
   async getEventByRangeDate(
     @Query('startDate') startDate,
@@ -120,6 +123,7 @@ export class EventController {
     const data = await this.eventService.getEventByRangeDate(start, end)
     return Reponse(data)
   }
+
   @Get('event-history')
   async getEventHistory(
     @Query('idEvent') idEvent
@@ -127,6 +131,7 @@ export class EventController {
     const data = await this.eventService.getHistoryEvent(idEvent)
     return Reponse(data)
   }
+
   @Get('search-event')
   async searchEvent (
     @Query('searchBy') searchBy,
@@ -136,11 +141,19 @@ export class EventController {
     const data = await this.eventService.searchEvent(searchBy, keywords, user)
     return Reponse(data)
   }
+
   @Get('user-by-event')
   async userByEvent (
     @Query('idEvent') idEvent
   ) {
-    const data = await this.eventService.getUserByEvent(idEvent)
+    const data = await this.eventService.getAllUserByEvent(idEvent)
+    return Reponse(data)
+  }
+
+  @Roles(MANAGER)
+  @Post('cancel-user-request')
+  async cancelUserRequest(@Body() { _id, idUser }, @User() user) {
+    const data = await this.eventService.cancelUserRequest(idUser, _id, user)
     return Reponse(data)
   }
 }
