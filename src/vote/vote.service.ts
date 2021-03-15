@@ -16,7 +16,7 @@ const displayTypevote = (value) => {
 }
 @Injectable()
 export class VoteService {
-  async modifyVote(idUser: string, idEvent: string, type: EnumUserEventVote) {
+  async modifyVote(idUser: string, idEvent: string, type: EnumUserEventVote, { name }) {
     try {
       const event = await getMongoRepository(EventEntity).findOne({ _id: idEvent, isActive: true })
       if (!event) throw new HttpException('Event not found or has deleted', HttpStatus.NOT_FOUND)
@@ -25,9 +25,10 @@ export class VoteService {
         idEvent,
         state: EnumUserEventState.APPROVED
       })
-      if (userEventExist)
+      if (!userEventExist)
         throw new HttpException(`You was not joined ${event.name}`, HttpStatus.NOT_FOUND)
-      userEventExist.typeVote = type
+      if (userEventExist.typeVote === type) userEventExist.typeVote = EnumUserEventVote.NONE
+      else userEventExist.typeVote = type
       const saveVote = await getMongoRepository(UserEventEntity).save(userEventExist)
       await getMongoRepository(UserHistoryEntity).insertOne(new UserHistoryEntity({
         idUser,
@@ -40,6 +41,7 @@ export class VoteService {
       }))
       return !!saveVote
     } catch (error) {
+      console.log(error)
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }

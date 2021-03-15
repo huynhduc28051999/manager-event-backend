@@ -79,7 +79,6 @@ export class UserController {
     return Reponse(data)
   }
 
-  @Roles(USER)
   @Post('request-join-event')
   async requestJoinEvent(@User() user, @Body() { idEvent }) {
     // {

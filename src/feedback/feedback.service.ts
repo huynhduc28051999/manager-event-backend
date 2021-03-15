@@ -15,7 +15,7 @@ export class FeedbackService {
           idEvent: event._id
         },
         order: {
-          createdAt: 'DESC'
+          createdAt: 'ASC'
         }
       })
       const userMap: Map<string, UserEntity> = await new Promise(async rel => {

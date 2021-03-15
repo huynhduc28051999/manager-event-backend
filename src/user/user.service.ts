@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt'
 import * as moment from 'moment'
 import { getMongoRepository } from "typeorm"
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common"
-import { ACCESS_TOKEN, AddUserDTO, LoginDTO, ByUser, ChangePasswordDTO } from '@utils'
+import { ACCESS_TOKEN, AddUserDTO, LoginDTO, ByUser, ChangePasswordDTO, EnumUserEventState, EnumUserEventVote } from '@utils'
 import { Permission, UserEntity, GroupsEntity, EventEntity, UserEventEntity, UserHistoryEntity } from '@entity'
 
 @Injectable()
@@ -283,11 +283,13 @@ export class UserService {
         idEvent,
         idUser
       })
-      if (!userEventExist) throw new HttpException('User has already requested this event', HttpStatus.CONFLICT)
+      if (userEventExist) throw new HttpException('User has already requested this event', HttpStatus.CONFLICT)
       const newUserEvent = new UserEventEntity({
         idEvent,
         idUser,
         createdAt: moment().valueOf(),
+        state: EnumUserEventState.REQUESTED,
+        typeVote: EnumUserEventVote.NONE,
         createdBy: {
           _id,
           name

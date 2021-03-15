@@ -10,6 +10,7 @@ import { GroupModule } from './group/group.module'
 import { EventModule } from './event/event.module'
 import { FeedbackModule } from './feedback/feedback.module'
 import { VoteModule } from './vote/vote.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { VoteModule } from './vote/vote.module';
     GroupModule,
     EventModule,
     FeedbackModule,
-    VoteModule
+    VoteModule,
+    ReportModule
   ],
   controllers: [AppController],
   providers: [AppService],

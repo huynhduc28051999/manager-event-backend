@@ -9,12 +9,12 @@ export class VoteController {
     private readonly voteService: VoteService
   ) {}
   @Post('modify-vote')
-  async modifyVote(@User('_id') _id, @Body() { idEvent, type }) {
+  async modifyVote(@User() user, @Body() { idEvent, type }) {
     // {
     //   idEvent: string
     //   type: enum VoteType
     // }
-    const data = await this.voteService.modifyVote(_id, idEvent, type)
+    const data = await this.voteService.modifyVote(user._id, idEvent, type, { name: user.name })
     return Reponse(data)
   }
   

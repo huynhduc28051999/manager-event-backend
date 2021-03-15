@@ -1,6 +1,6 @@
-import { Controller, UseGuards, Get, Query, Post, Body, Put } from '@nestjs/common'
+import { Controller, UseGuards, Get, Query, Post, Body, Put, Delete, Param } from '@nestjs/common'
 import { AuthGuard, Roles, Reponse, User } from '@common'
-import { ADMIN, MANAGER, AddEventDTO } from '@utils'
+import { ADMIN, MANAGER, AddEventDTO, USER } from '@utils'
 import { EventService } from './event.service'
 
 @UseGuards(AuthGuard)
@@ -17,10 +17,9 @@ export class EventController {
     return Reponse(data)
   }
 
-  @Roles(ADMIN, MANAGER)
   @Get()
-  async getEventById(@Query('id') id: string) {
-    const data = await this.eventService.getEventById(id)
+  async getEventById(@Query('id') id: string, @User('_id') idUser) {
+    const data = await this.eventService.getEventById(id, idUser)
     return Reponse(data)
   }
 
@@ -154,6 +153,12 @@ export class EventController {
   @Post('cancel-user-request')
   async cancelUserRequest(@Body() { _id, idUser }, @User() user) {
     const data = await this.eventService.cancelUserRequest(idUser, _id, user)
+    return Reponse(data)
+  }
+
+  @Delete('delete-user-event')
+  async deleteUserEvent(@Query('id') id: string) {
+    const data = await this.eventService.deleteUserEvent(id)
     return Reponse(data)
   }
 }

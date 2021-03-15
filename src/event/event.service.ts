@@ -3,12 +3,12 @@ import { getMongoRepository } from 'typeorm'
 import { EventEntity, UserEntity, GroupsEntity, FeedbackEntity, UserEventEntity, EventHistoryEntity } from '@entity'
 import * as moment from 'moment'
 import { AddEventDTO, EnumEventState, EnumUserEventState, EnumUserEventVote, UpdateEventDTO } from '@utils'
-import { AppGateway } from 'shared/app.gateway'
+// import { AppGateway } from 'shared/app.gateway'
 
 @Injectable()
 export class EventService {
   constructor (
-    private readonly appGateway: AppGateway
+    // private readonly appGateway: AppGateway
   ) {}
   async getAllEvent() {
     try {
@@ -85,17 +85,16 @@ export class EventService {
       const event = await getMongoRepository(EventEntity).findOne({ _id })
       if (!event) throw new HttpException('Event not found', HttpStatus.NOT_FOUND)
       const userEvents = await getMongoRepository(UserEventEntity).find({ idEvent: _id })
+      const userEventMap = new Map(userEvents.map(item => [item.idUser, item]))
       const [
         users,
         group,
-        feedbacks,
         likeCount,
         dislikeCount,
         vote
       ] = await Promise.all<
         UserEntity[],
         GroupsEntity,
-        FeedbackEntity[],
         number,
         number,
         any
@@ -112,9 +111,6 @@ export class EventService {
         getMongoRepository(GroupsEntity).findOne({
           _id: event.idGroup
         }),
-        getMongoRepository(FeedbackEntity).find({
-          idEvent: _id
-        }),
         getMongoRepository(UserEventEntity).count({
           idEvent: _id,
           typeVote: EnumUserEventVote.LIKE
@@ -126,7 +122,6 @@ export class EventService {
         getMongoRepository(UserEventEntity).findOne({
           idEvent: _id,
           idUser,
-          typeVote: EnumUserEventVote.DISLIKE,
           state: EnumUserEventState.APPROVED
         })
       ])
@@ -136,16 +131,17 @@ export class EventService {
       const userMap = new Map()
       users.forEach(item => {
         delete item.password
+        item['userEvent'] = userEventMap.get(item._id)
         userMap.set(item._id, item)
       })
       event['group'] = group
       event['dislikeCount'] = dislikeCount
       event['likeCount'] = likeCount
       event['users'] = users
-      event['feedbacks'] = feedbacks.map(item => {
-        item['user'] = userMap.get(item.idUser)
-        return item
-      })
+      // event['feedbacks'] = feedbacks.map(item => {
+      //   item['user'] = userMap.get(item.idUser)
+      //   return item
+      // })
       return event
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -727,7 +723,7 @@ export class EventService {
       })
       const userEvents = await getMongoRepository(UserEventEntity).find({
         where: {
-          idEvent: events.map(item => item._id),
+          idEvent: { $in: events.map(item => item._id) },
           idUser: user._id
         }
       })
@@ -831,6 +827,13 @@ export class EventService {
         }
       }))
       return saveUserEvent
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+  async deleteUserEvent(id: string) {
+    try {
+      return await (await getMongoRepository(UserEventEntity).deleteOne({ _id: id })).deletedCount
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
     }

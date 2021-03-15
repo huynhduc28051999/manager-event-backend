@@ -12,7 +12,7 @@ import { getMongoRepository } from 'typeorm'
 import { WsGuard } from 'common/guard/wsAuth.guard'
 import { Roles } from '@common'
 
-@WebSocketGateway({ transport: ['websocket'] })
+@WebSocketGateway()
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private ws: Server
@@ -46,6 +46,12 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   @UseGuards(WsGuard)
   @SubscribeMessage('msgToSever')
   async msgToServer(socket: Socket, data: any) {
+    console.log(data)
+  }
+
+  @UseGuards(WsGuard)
+  @SubscribeMessage('addCommment')
+  async addComment(socket: Socket, data: any) {
     console.log(data)
   }
 }

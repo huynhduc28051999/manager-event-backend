@@ -2,14 +2,14 @@ import { Controller, UseGuards, Get, Query, Post, Body } from '@nestjs/common'
 import { AuthGuard, Reponse, User, Roles } from '@common'
 import { FeedbackService } from './feedback.service'
 import { FeedbackDTO, ADMIN, MANAGER, USER } from '@utils'
-import { AppGateway } from 'shared/app.gateway'
+// import { AppGateway } from 'shared/app.gateway'
 
 @UseGuards(AuthGuard)
 @Controller('feedback')
 export class FeedbackController {
   constructor(
     private readonly feedbackService: FeedbackService,
-    private readonly appGateway: AppGateway
+    // private readonly appGateway: AppGateway
   ) { }
 
   @Roles(ADMIN, MANAGER, USER)
@@ -30,11 +30,11 @@ export class FeedbackController {
   @Post()
   async addFeedBack(@Body() input: FeedbackDTO, @User() user){
     const data = await this.feedbackService.addFeedback(input, user)
-    this.appGateway.sendAlet(
-      `${user.name || ''} đã bình luận ở event mà bạn đang tham gia`,
-      [input.idEvent],
-      user._id
-    )
+    // this.appGateway.sendAlet(
+    //   `${user.name || ''} đã bình luận ở event mà bạn đang tham gia`,
+    //   [input.idEvent],
+    //   user._id
+    // )
     return Reponse(data)
   }
 }
