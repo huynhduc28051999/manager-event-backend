@@ -1,7 +1,7 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import * as moment from 'moment'
 import { getMongoRepository } from 'typeorm';
-import { UserEntity } from '@entity';
+import { UserEntity, EventEntity } from '@entity';
 
 const mapDataByTimeline = (type, data, timeBy = 'createdAt') => {
   switch (type) {
@@ -149,5 +149,60 @@ export class ReportService {
       throw new HttpException(error, 500)
     }
   }
+  async reportEvent({
+    type,
+    dateTime
+  }) {
+    try {      
+      const { startDate } = dateTime
+      const endDate =
+        moment(dateTime.endDate).valueOf() > moment().valueOf()
+          ? moment()
+              .add(1, 'day')
+              .valueOf()
+          : moment(dateTime.endDate)
+              .add(1, 'day')
+              .valueOf()
+      const events = await getMongoRepository(EventEntity).find({
+        where: {
+          isActive: true,
+          createdAt: {
+            $gte: moment(startDate).valueOf(),
+            $lte: moment(endDate).valueOf()
+          }
+        }
+      })
+      const eventsByTime = mapDataByTimeline(type, events, 'createdAt')
+      const eventsMap = new Map()
+      eventsByTime.forEach(async item => {
+        const obj = eventsMap.get(item.name) || {
+          name: item.name,
+          time: item.time,
+          COMPLETED: 0,
+          PROCESSING: 0,
+          CANCELLED: 0
+        }
+        eventsMap.set(item.name, { ...obj, [`${item.state}`]: obj[item.state] + 1 })
+      })
 
+      const defaultTimeline = getDefaultTimeline(type, startDate, endDate)
+      defaultTimeline.forEach(item => {
+        const obj = eventsMap.get(item.name) || {
+          name: item.name,
+          time: item.time,
+          COMPLETED: 0,
+          PROCESSING: 0,
+          CANCELLED: 0
+        }
+        eventsMap.set(item.name, obj)
+      })
+      const dataLine = JSON.stringify([...eventsMap.values()].sort((a, b) => a.time - b.time))
+      return {
+        dataLine,
+        dataGrid: events
+      }
+    } catch (error) {
+      throw new HttpException(error, 500)
+    }
+  }
 }

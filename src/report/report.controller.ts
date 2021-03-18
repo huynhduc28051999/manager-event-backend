@@ -23,4 +23,19 @@ export class ReportController {
     })
     return Reponse(data)
   }
+  @Get('reportEvent')
+  async reportEvent(
+    @Query('type') type: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string
+  ) {
+    const data = await this.reportService.reportEvent({
+      type,
+      dateTime: {
+        startDate: Number(startDate),
+        endDate: Number(endDate)
+      }
+    })
+    return Reponse(data)
+  }
 }
