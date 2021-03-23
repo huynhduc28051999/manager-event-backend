@@ -38,4 +38,32 @@ export class ReportController {
     })
     return Reponse(data)
   }
+  @Get('reportEventByUser')
+  async reportEventByUser(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string
+  ) {
+    const data = await this.reportService.reportEventByUser({
+      dateTime: {
+        startDate: Number(startDate),
+        endDate: Number(endDate)
+      }
+    })
+    return Reponse(data)
+  }
+  @Get('detail-user-event')
+  async detailUserEvent(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('idUser') idUser: string
+  ) {
+    const data = await this.reportService.detailReportEventByUser({
+      dateTime: {
+        startDate: Number(startDate),
+        endDate: Number(endDate)
+      },
+      idUser
+    })
+    return Reponse(data)
+  }
 }

@@ -1,7 +1,7 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import * as moment from 'moment'
 import { getMongoRepository } from 'typeorm';
-import { UserEntity, EventEntity } from '@entity';
+import { UserEntity, EventEntity, UserEventEntity } from '@entity';
 
 const mapDataByTimeline = (type, data, timeBy = 'createdAt') => {
   switch (type) {
@@ -205,4 +205,83 @@ export class ReportService {
       throw new HttpException(error, 500)
     }
   }
+  async reportEventByUser({ dateTime }): Promise<any[] | HttpException> {
+    try {
+      const { startDate, endDate } = dateTime
+      const data = await getMongoRepository(UserEventEntity)
+        .aggregate([
+          {
+            $match: {
+              createdAt: {
+                $gte: startDate,
+                $lte: endDate
+              },
+              state: 'APPROVED'
+            }
+          },
+          {
+            $lookup: {
+              from: 'User',
+              localField: 'idUser',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $unwind: '$user'
+          },
+          {
+            $group: {
+              _id: '$user._id',
+              count: { $sum: 1 },
+              name: { $first: '$user.name' },
+              email: { $first: '$user.email' },
+              phoneNumber: { $first: '$user.phoneNumber' },
+              gender: { $first: '$user.gender' },
+              avatar: { $first: '$user.avatar' }
+            }
+          }
+        ])
+        .toArray()
+      return data
+    } catch (error) {
+      throw new HttpException(error, 500)
+    }
+  }
+
+  async detailReportEventByUser({ dateTime, idUser }): Promise<any[] | HttpException> {
+    try {
+      const { startDate, endDate } = dateTime
+      const data = await getMongoRepository(UserEventEntity)
+        .aggregate([
+          {
+            $match: {
+              createdAt: {
+                $gte: startDate,
+                $lte: endDate
+              },
+              state: 'APPROVED',
+              idUser
+            }
+          },
+          {
+            $lookup: {
+              from: 'Event',
+              localField: 'idEvent',
+              foreignField: '_id',
+              as: 'event'
+            }
+          },
+          {
+            $unwind: '$event'
+          }
+        ])
+        .toArray()
+      return data
+    } catch (error) {
+      throw new HttpException(error, 500)
+    }
+  }
+
+
 }
