@@ -3,12 +3,12 @@ import { getMongoRepository } from 'typeorm'
 import { EventEntity, UserEntity, GroupsEntity, FeedbackEntity, UserEventEntity, EventHistoryEntity } from '@entity'
 import * as moment from 'moment'
 import { AddEventDTO, EnumEventState, EnumUserEventState, EnumUserEventVote, UpdateEventDTO } from '@utils'
-// import { AppGateway } from 'shared/app.gateway'
+import { AppGateway } from 'shared/app.gateway'
 
 @Injectable()
 export class EventService {
   constructor (
-    // private readonly appGateway: AppGateway
+    private readonly appGateway: AppGateway
   ) {}
   async getAllEvent() {
     try {
@@ -259,6 +259,7 @@ export class EventService {
           }
         }
       )
+      this.appGateway.sendAlet(`${name} đã chỉnh sửa thông tin sự kiện ${eventExist.name}`, _id, { _id: idUser, name })
       await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
         idEvent: _id,
         content: `${name} đã thay đổi thông tin sự kiện ${updatedEvent.value.name}`,
@@ -320,6 +321,7 @@ export class EventService {
         name
       }
       const saveEvent = await getMongoRepository(EventEntity).save(event)
+      this.appGateway.sendAlet(`${name} đã đánh dấu hoàn thành sự kiện ${event.name}`, _id, { _id: idUser, name })
       await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
         idEvent: _id,
         content: `${name} đã thay đổi trạng thái sự kiện thành Đã hoàn thành`,
@@ -360,6 +362,7 @@ export class EventService {
           name
         }
       }))
+      this.appGateway.sendAlet(`${name} đã hủy sự kiện ${event.name}`, _id, { _id: idUser, name })
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -422,6 +425,7 @@ export class EventService {
           name
         }
       }))
+      this.appGateway.sendAlet(`${name} đã thêm bạn vào sự kiện ${event.name}`, idUser, { _id: idUserUpdate, name })
       return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -457,6 +461,7 @@ export class EventService {
           name
         }
       }))
+      this.appGateway.sendAlet(`${name} đã xóa bạn khỏi sự kiện ${event.name}`, idUser, { _id: idUserUpdate, name })
       return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -501,6 +506,7 @@ export class EventService {
           name
         }
       }))
+      this.appGateway.sendAlet(`${name} đã duyệt yêu cầu tham gia sự kiện ${event.name}`, idUser, { _id: idUserUpdate, name })
       return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -696,6 +702,7 @@ export class EventService {
           name
         }
       }))
+      this.appGateway.sendAlet(`${name} đã mở lại sự kiện ${event.name}`, _id, { _id: idUser, name })
       return saveEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -826,6 +833,7 @@ export class EventService {
           name
         }
       }))
+      this.appGateway.sendAlet(`${name} đã xóa yêu cầu tham gia sự kiện ${event.name}`, idUser, { _id: idUserUpdate, name })
       return saveUserEvent
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)

@@ -19,7 +19,7 @@ export class GroupController {
     return Reponse(data)
   }
 
-  @Roles(ADMIN)
+  @Roles(ADMIN, USER)
   @Get()
   async groupById(@Query('id') id) {
     const data = await this.groupService.groupsById(id)

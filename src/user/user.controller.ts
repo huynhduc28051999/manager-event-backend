@@ -2,6 +2,8 @@ import { Controller, Get, Param, Post, Body, UseGuards, Query, Req, Delete, Put 
 import { UserService } from './user.service'
 import { AddUserDTO, ADMIN, MANAGER, USER, ChangePasswordDTO, ChangeProfile } from '@utils'
 import { AuthGuard, Roles, User, Reponse } from '@common'
+import { getMongoRepository } from 'typeorm'
+import { NotificationOfUserEntity } from '@entity'
 
 @UseGuards(AuthGuard)
 @Controller('user')
@@ -98,6 +100,21 @@ export class UserController {
   async changeProfile(@User() user, @Body() input: ChangeProfile) {
     const data = await this.userService.updateUser(user._id, input, user)
     return Reponse(data)
+  }
+  @Get('notification')
+  async notification(@User('_id') _id) {
+    const data = await getMongoRepository(NotificationOfUserEntity).find({ idUser: _id, isRead: false })
+    return Reponse(data)
+  }
+  @Delete('make-read-all')
+  async makeReadAll(@User('_id') _id) {
+    const data = await getMongoRepository(NotificationOfUserEntity).updateMany({ idUser: _id, isRead: false }, { $set: { isRead: true } })
+    return Reponse(data.result.ok)
+  }
+  @Delete('make-read')
+  async readNotify(@User('_id') _id, @Body('id') id) {
+    const data = await getMongoRepository(NotificationOfUserEntity).updateOne({ _id: id }, { $set: { isRead: true } })
+    return Reponse(data.result.ok)
   }
 }
 
