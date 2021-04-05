@@ -24,7 +24,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:seed": "ts-node src/dbseed.ts",
     "postinstall": "npm run start:prod",
-    "heroku-postbuild": "npm run build"
+    "postbuild": "npm run build"
   },
   "dependencies": {
     "@nestjs/common": "^7.1.3",
