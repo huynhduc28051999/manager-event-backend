@@ -8,6 +8,11 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   })
+  app.enableCors({
+    origin: 'https://event-management-pro.netlify.app',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  })
   await app.listen(process.env.PORT || 4000);
 }
 bootstrap();
