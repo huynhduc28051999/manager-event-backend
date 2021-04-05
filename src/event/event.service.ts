@@ -215,7 +215,7 @@ export class EventService {
         idUser: item._id,
         state: EnumUserEventState.APPROVED
       }))
-      await getMongoRepository(UserEventEntity).insertMany(arrNewUserEvent)
+      if (arrNewUserEvent.length) await getMongoRepository(UserEventEntity).insertMany(arrNewUserEvent)
       const history = new EventHistoryEntity({
         idEvent: newEvent._id,
         content: `${name} đã tạo sự kiện ${newEvent.name}`,
