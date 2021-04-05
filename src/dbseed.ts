@@ -5,11 +5,11 @@ async function main() {
 	console.log('🌱  Database seeder is running')
 
   const userName = 'huynhduc'
-  const password = 'duc123456789'
-	const dbName = 'eventmanage'
+  const password = '0989311865'
+	const dbName = 'eventmanager'
 
-	// const url = `mongodb+srv://${userName}:${password}@cluster0.pvxto.mongodb.net/${dbName}`
-	const url = `mongodb://localhost:27017/${dbName}`
+	const url ='mongodb+srv://huynhduc:0989311865@cluster0.u91zw.mongodb.net/eventmanager'
+	// const url = `mongodb://localhost:27017/${dbName}`
 	console.log(`🔗  MONGO_URL: ${url}`)
 
 	const client = new MongoClient(url)
@@ -98,9 +98,9 @@ async function main() {
 		const groups = [
 			{
 				_id: '1',
-				name: 'testGroup',
+				name: 'Phòng ban 1',
 				avatar: '',
-				description: 'group nay de test cho vui',
+				description: 'phòng ban kết nối các lập trình viên của công ty',
 				createdBy: {
 					_id: 'c30c0730-be4f-11e9-9f04-f72d443f7ef2',
 					name: 'admin'

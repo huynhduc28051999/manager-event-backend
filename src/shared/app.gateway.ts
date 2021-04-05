@@ -57,7 +57,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       this.ws.to(item.idUser).emit('notification', newNotification)
       dataRes.push(newNotification)
     }
-    await getMongoRepository(NotificationOfUserEntity).insertMany(dataRes)
+    if (dataRes.length) await getMongoRepository(NotificationOfUserEntity).insertMany(dataRes)
   }
   sendComment(idEvent: string, data) {
     this.ws.to(idEvent).emit('comment', data)

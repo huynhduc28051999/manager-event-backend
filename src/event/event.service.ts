@@ -259,7 +259,7 @@ export class EventService {
           }
         }
       )
-      this.appGateway.sendAlet(`${name} đã chỉnh sửa thông tin sự kiện ${eventExist.name}`, _id, { _id: idUser, name })
+      this.appGateway.sendAlet(`${name} đã chỉnh sửa thông tin sự kiện ${input.name}`, _id, { _id: idUser, name })
       await getMongoRepository(EventHistoryEntity).insertOne(new EventHistoryEntity({
         idEvent: _id,
         content: `${name} đã thay đổi thông tin sự kiện ${updatedEvent.value.name}`,

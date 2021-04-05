@@ -18,8 +18,8 @@ import { ReportModule } from './report/report.module';
     AuthModule,
     TypeOrmModule.forRoot(
         {
-          // url: 'mongodb+srv://huynhduc:duc123456789@cluster0.pvxto.mongodb.net/eventmanage',
-          url: 'mongodb://localhost:27017/eventmanage',
+          url: 'mongodb+srv://huynhduc:0989311865@cluster0.u91zw.mongodb.net/eventmanager',
+          // url: 'mongodb://localhost:27017/eventmanage',
           type: "mongodb",
           entities: [join(__dirname, '**/**.entity{.ts,.js}')],
           synchronize: true,
